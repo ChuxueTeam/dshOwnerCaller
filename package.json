@@ -1,0 +1,62 @@
+{
+  "name": "dsh-caller",
+  "version": "1.0.0",
+  "description": "呼叫主人：DeepSeek Harness 插件 —— 需要用户本人回来时弹出可自定义文案的窗口，并按用户设置循环播放提示音，直到用户亲手关闭",
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "deepseek-harness",
+    "notification",
+    "reminder",
+    "alert",
+    "attention",
+    "tts"
+  ],
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": {
+    ".": {
+      "default": "./lib/index.js"
+    },
+    "./client": "./lib/client.js",
+    "./cordis.patch.yml": "./cordis.patch.yml",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib",
+    "assets",
+    "cordis.patch.yml",
+    "README.md"
+  ],
+  "scripts": {
+    "test": "node tools/test-host.mjs && node tools/test-client.mjs",
+    "test:host": "node tools/test-host.mjs",
+    "test:client": "node tools/test-client.mjs"
+  },
+  "devDependencies": {
+    "domino": "^2.1.6",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "license": "MIT",
+  "author": "ChuxueTeam",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ChuxueTeam/dshOwnerCaller.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ChuxueTeam/dshOwnerCaller/issues"
+  },
+  "homepage": "https://github.com/ChuxueTeam/dshOwnerCaller#readme",
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "inject": [
+        "slots"
+      ]
+    }
+  }
+}

@@ -1,0 +1,8 @@
+# dsh-caller bundle patch —— 把「呼叫主人」叠加到 profile 组合上（零侵入）。
+# 单包双面（dsh.bundle + dsh.client）：
+#   · 宿主插件（Host 侧）：注册 /api/dsh-caller/* 路由（SSE 推送、内置音频、
+#     本地音频文件、SAPI 语音合成、浏览器设置上报），并向工具表注册 call_owner；
+#   · 浏览器插件（dsh.client）：注入设置面板栏目「呼叫主人」与全局弹窗 + 提示音。
+- insert:
+    - id: dsh-caller
+      name: dsh-caller

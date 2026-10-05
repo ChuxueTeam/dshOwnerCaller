@@ -1,0 +1,20 @@
+# 依赖
+node_modules/
+pnpm-lock.yaml
+
+# 构建 / 生成物
+tools/voice-default-raw.wav
+*.part
+
+# 日志与临时文件
+*.log
+npm-debug.log*
+pnpm-debug.log*
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# 编辑器
+.vscode/
+.idea/
+*.swp
