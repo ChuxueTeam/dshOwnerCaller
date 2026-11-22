@@ -91,7 +91,7 @@ def main() -> None:
     # 文案
     text_x = icon_x + icon + 20
     draw.text((text_x, cy0 + 34), "呼叫", font=regular(19), fill=SUB)
-    draw.text((text_x, cy0 + 66), "主人，人家有事找你", font=bold(38), fill=INK)
+    draw.text((text_x, cy0 + 66), "主人，哦鲸鲸找你", font=bold(38), fill=INK)
 
     # 按钮
     bx1, by1 = cx0 + cw - 30, cy0 + ch - 30

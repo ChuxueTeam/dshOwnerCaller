@@ -317,11 +317,14 @@ const expectedTexts = [
   "播放提示音",
   "一直响，直到我关掉弹窗",
   "音频来源",
-  "系统语音朗读当前文案",
+  "DeepSeek 语音（在线 · 推荐）",
+  "系统语音（本机 SAPI）",
   "内置音效",
   "本地音频文件",
-  "语音音色（可选）",
-  "语速",
+  "音色",
+  "暗潮 · 男声（tide）",
+  "海星 · 女声（stella）",
+  "DeepSeek API Key",
   "音量",
   "试听提示音（只响一遍）",
   "同时发送系统通知",
@@ -333,7 +336,7 @@ for (const text of expectedTexts) {
 }
 check("面板已去掉「重复次数」（改成循环/单次）", !markup.includes("重复次数"));
 check("设置面板只渲染一份（无重复）", markup.split("试听提示音").length - 1 === 1, `出现 ${markup.split("试听提示音").length - 1} 次`);
-check("面板默认文案正确", markup.includes("主人，人家有事找你"));
+check("面板默认文案正确", markup.includes("主人，哦鲸鲸找你"));
 
 /* ------------------------------------------------------------------ *
  * SSE 事件 → 弹窗 + 循环提示音 + 关闭停音
@@ -349,7 +352,8 @@ source.emit("call", { data: JSON.stringify({ kind: "call", id: 8, text: "测试�
 const firstAudio = FakeAudio.instances.at(-1);
 check("弹窗显示了事件里的自定义文案", popupText() === "测试文案：来一下", popupText());
 check("弹窗带上了 reason 小字", q(".dsh-caller-reason")?.textContent === "验收");
-check("播了提示音（默认走系统语音）", firstAudio?.src?.startsWith("/api/dsh-caller/tts?text=") === true, firstAudio?.src);
+check("默认走 DeepSeek 语音", firstAudio?.src?.startsWith("/api/dsh-caller/deepseek/tts?text=") === true, firstAudio?.src);
+check("默认音色是 tide", firstAudio?.src?.includes("voice=tide") === true, firstAudio?.src);
 check("音量取设置里的 0.9", firstAudio?.volume === 0.9, String(firstAudio?.volume));
 check("默认弹窗小标题是「呼叫」", q(".dsh-caller-title")?.textContent === "呼叫");
 check("普通呼叫没有 urgent 样式", q(".dsh-caller-urgent") === null);
@@ -367,7 +371,7 @@ source.emit("call", { data: JSON.stringify({ kind: "call", id: 9, urgent: true }
 const urgentCard = q(".dsh-caller-urgent");
 check("紧急呼叫弹出一张卡片", qa(".dsh-caller-card").length === 1);
 check("紧急呼叫带 urgent 样式", urgentCard !== null);
-check("紧急呼叫显示设置里的默认文案", urgentCard?.querySelector(".dsh-caller-text")?.textContent === "主人，人家有事找你");
+check("紧急呼叫显示设置里的默认文案", urgentCard?.querySelector(".dsh-caller-text")?.textContent === "主人，哦鲸鲸找你");
 check("紧急呼叫改用 🚨", urgentCard?.querySelector(".dsh-caller-emoji")?.textContent === "🚨");
 check("紧急呼叫同样是循环响", FakeAudio.instances.at(-1)?.loop === true);
 

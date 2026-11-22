@@ -2,7 +2,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![DeepSeek Harness](https://img.shields.io/badge/DeepSeek%20Harness-plugin-4d6bfe)](https://github.com/ChuxueTeam/dshOwnerCaller)
-[![Tests](https://img.shields.io/badge/tests-89%20assertions-brightgreen)](tools)
+[![Tests](https://img.shields.io/badge/tests-97%20assertions-brightgreen)](tools)
 
 > 需要你本人回到电脑前的时候，让 DSH 弹窗并出声喊你。
 > **呼叫会一直响，弹窗也不会自己消失——直到你亲手点掉它。**
@@ -27,14 +27,15 @@
 
 | | |
 | --- | --- |
-| 🔔 **可自定义弹窗** | 标题、正文、一行小字说明都能改，默认文案「主人，人家有事找你」 |
-| 🔊 **三种提示音来源** | 系统语音朗读当前文案（默认）/ 内置音效 / 本地音频文件 |
+| 🔔 **可自定义弹窗** | 标题、正文、一行小字说明都能改，默认文案「主人，哦鲸鲸找你」 |
+| 🔊 **四种提示音来源** | DeepSeek 在线语音（默认）/ 系统语音 / 内置音效 / 本地音频文件 |
+| 🗣️ **弹窗语与播报语分离** | 模型换屏幕上的字不会触发重新合成；同一句语音本地缓存，反复呼叫零计费 |
 | ♾️ **一直响到手动关闭** | 循环播放，只有你关掉弹窗才停 |
 | 🚨 **紧急模式** | 换用 🚨 与更醒目的样式，让模型能表达「这次真的急」 |
 | 🔕 **可以闭嘴** | 设置里关掉「允许 AI 呼叫我」，模型再调工具也叫不动你 |
 | 💬 **工具回执** | 没有打开的窗口、或你已关掉开关时，工具如实返回 `delivered: false`，模型不会以为已经叫到你了 |
 | 🪟 **系统通知**（可选） | 窗口不在最前面时，再用 Windows 通知提醒一次 |
-| 🔌 **零侵入** | 不改任何内置包文件、不读业务 DOM、不发起任何外部网络请求 |
+| 🔌 **零侵入** | 不改任何内置包文件、不读业务 DOM；只有选了 DeepSeek 语音时才会请求官方 TTS 接口 |
 
 ## 安装
 
@@ -72,7 +73,8 @@ dsh plugin --profile desktop add link:<你的路径>/dshOwnerCaller
 
 | 参数 | 类型 | 说明 |
 | --- | --- | --- |
-| `text` | `string` | 本次弹窗文案（最多 300 字）；省略则用设置里的默认文案 |
+| `text` | `string` | 本次弹窗文案（最多 300 字）。**只影响屏幕显示，不会触发在线语音合成**；省略则用设置里的默认文案 |
+| `speak` | `string` | 可选：覆盖播报语，让语音念出这句话。**会触发一次在线合成（按字符计费）**，默认不要传 |
 | `reason` | `string` | 可选，一行小字说明为什么叫你 |
 | `urgent` | `boolean` | 紧急：换 🚨 与更醒目的样式 |
 | `silent` | `boolean` | 只弹窗、不响 |
@@ -86,10 +88,27 @@ dsh plugin --profile desktop add link:<你的路径>/dshOwnerCaller
 | 分组 | 设置 |
 | --- | --- |
 | **呼叫方式** | 允许 AI 呼叫我 · 弹窗小标题 · 弹窗文案 · 弹窗停留（`0` = 必须手动关闭） |
-| **提示音** | 播放提示音 · 一直响直到我关掉弹窗 · 音频来源 · 语音音色与语速 · 音频文件 · 音量 |
+| **提示音** | 播放提示音 · 一直响直到我关掉弹窗 · 音频来源 · 音色 · DeepSeek API Key · 播报语 · 音频文件 · 音量 |
 | **提醒方式** | 同时发送系统通知 · 立即呼叫（测试） · 只预览弹窗 |
 
-内置音效有四种：清脆门铃、柔和木琴、急促三连，以及一段女声「主人，人家有事找你」。
+内置音效有四种：清脆门铃、柔和木琴、急促三连，以及一段女声「主人，哦鲸鲸找你」。
+
+## DeepSeek 语音（默认音源）
+
+用的是 DeepSeek 官方整段合成接口 [`POST /v1/tools/tts`](https://api-docs.deepseek.com/zh-cn/guides/tts/)：
+
+| 项 | 值 |
+| --- | --- |
+| 音色 | `tide`（暗潮，男声，**默认**）/ `stella`（海星，女声），设置面板里用下拉框切换 |
+| 返回 | `wav` |
+| 计费 | 按字符计费，汉字算 2 个字符 |
+
+**填 Key**：设置 → 呼叫主人 → 提示音 → 「DeepSeek API Key」。Key 只写进宿主的 `<DSH_HOME>/dsh-caller/config.json`，浏览器里只显示 `sk-••••abcd` 这样的掩码，明文不会进入页面。也可以改用环境变量 `DEEPSEEK_API_KEY`。
+
+**为什么不贵**：合成结果按「音色 + 文本」哈希缓存在 `<DSH_HOME>/dsh-caller/deepseek-tts/`，同一句话只会真正请求一次。而且——
+
+> **窗口提示语和播报语是分开的。** 「弹窗文案」是屏幕上显示的字，模型每次可以自己换；「播报语」才是被念出来的那句，固定不变。
+> 所以模型反复呼叫、每次换个说法弹窗，都只命中本地缓存，**不会反复请求在线合成**。只有模型显式传 `speak` 时才会为那句话单独合成一次。
 
 ## 工作原理
 
@@ -140,9 +159,9 @@ A：会，这正是它的用途。真嫌吵就把「弹窗停留」改成 N 秒�
 
 ```powershell
 npm install           # 只装测试依赖：domino + react + react-dom
-npm test              # 两套一起跑，共 89 项断言
-npm run test:host     # 宿主半边 19 项：路由、SSE、Range、上传、SAPI、工具定义
-npm run test:client   # 浏览器半边 70 项：domino + 真 React 无头渲染，含弹窗与循环提示音
+npm test              # 两套一起跑，共 97 项断言
+npm run test:host     # 宿主半边 23 项：路由、SSE、Range、上传、SAPI、DeepSeek 配置接口
+npm run test:client   # 浏览器半边 74 项：domino + 真 React 无头渲染，含弹窗与循环提示音
 ```
 
 客户端验收需要一组**同源同版本**的 React；脚本会自己从本仓库 `node_modules`、DSH 自带依赖里找，找不到就明确打印「跳过」而不是假装通过。

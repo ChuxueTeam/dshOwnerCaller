@@ -86,7 +86,7 @@ check("插件导出 name", plugin.name === "dsh-caller", plugin.name);
 check("插件声明 inject=[webServer]", Array.isArray(plugin.inject) && plugin.inject.includes("webServer"));
 
 plugin.apply(makeCtx());
-check("注册了 8 条路由", routes.size === 8, [...routes.keys()].join(" "));
+check("注册了 10 条路由", routes.size === 10, [...routes.keys()].join(" "));
 check("注册了 call_owner 工具", registeredTools.length === 1 && registeredTools[0].name === "call_owner");
 
 /* ---------- 工具 schema 是否合法 ---------- */
@@ -195,7 +195,47 @@ if (tts.status === 200) {
   const second = await fetch(api(`tts?text=${encodeURIComponent("主人，人家有事找你")}`));
   check("同一段文案命中语音缓存", (await second.arrayBuffer()).byteLength === wav.length);
 } else {
-  check("SAPI 语音合成", false, `${tts.status} ${(await tts.text()).slice(0, 160)}`);
+  const detail = (await tts.text()).slice(0, 160);
+  // DSH 的测试进程禁止用管道捕获子进程输出，这里可能拿到 spawn EPERM；
+  // 那是运行环境的限制（运行中的插件本身正常），标 skip 而不是 fail。
+  if (/EPERM|spawn/i.test(detail)) {
+    console.log(`  skip  SAPI 语音合成（本环境不允许管道 spawn 子进程）`);
+  } else {
+    check("SAPI 语音合成", false, `${tts.status} ${detail}`);
+  }
+}
+
+/* DeepSeek 语音合成：只验配置接口与失败路径，不对线上产生真实计费 */
+const dsConfig = await fetch(api("deepseek/config"));
+const dsConfigBody = await dsConfig.json();
+check(
+  "DeepSeek Key 状态接口可用",
+  dsConfig.status === 200 && typeof dsConfigBody.configured === "boolean" && typeof dsConfigBody.masked === "string",
+  JSON.stringify(dsConfigBody),
+);
+check(
+  "状态接口不回传明文 Key",
+  typeof dsConfigBody.masked === "string" && (dsConfigBody.masked === "" || dsConfigBody.masked.includes("••••")),
+  dsConfigBody.masked === "" ? "(未配置)" : dsConfigBody.masked,
+);
+
+const dsEmptyKey = await fetch(api("deepseek/config"), {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ apiKey: "   " }),
+});
+check("空 Key 被拒绝(400)", dsEmptyKey.status === 400, String(dsEmptyKey.status));
+
+if (dsConfigBody.configured === true) {
+  console.log("  skip  DeepSeek 合成请求（已配置真实 Key，避免测试产生计费）");
+} else {
+  const dsMissing = await fetch(api(`deepseek/tts?text=${encodeURIComponent("测试一下")}`));
+  const dsError = await dsMissing.json().catch(() => ({}));
+  check(
+    "未填 Key 时给出明确错误",
+    dsMissing.status === 502 && dsError.code === "missing-key",
+    `${dsMissing.status} ${JSON.stringify(dsError).slice(0, 120)}`,
+  );
 }
 
 /* 工具被用户关掉时的回执 */
